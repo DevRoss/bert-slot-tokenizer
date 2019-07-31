@@ -19,7 +19,7 @@ pip install bert-slot-tokenizer
 
 ## 支持的格式：
 
-- [IOB]([https://en.wikipedia.org/wiki/Inside%E2%80%93outside%E2%80%93beginning_(tagging)](https://en.wikipedia.org/wiki/Inside–outside–beginning_(tagging))
+- [IOB格式](https://en.wikipedia.org/wiki/Inside–outside–beginning_(tagging))
 
 ## 使用方法：
 
