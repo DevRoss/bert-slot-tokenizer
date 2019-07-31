@@ -1,0 +1,15 @@
+language: python
+python:
+  - '3.6'
+  - '3.5'
+  - '3.4'
+matrix:
+  include:
+    - python: '3.6'
+      env: EXTRA_TESTS=true
+    - python: '3.5'
+      env: EXTRA_TESTS=true
+    - python: '3.4'
+      env: EXTRA_TESTS=true
+install: pip install six
+script: python ./tests/test_project.py
