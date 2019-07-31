@@ -2,7 +2,7 @@
 
 -----------------
 
-![Travis (.org)](https://img.shields.io/travis/DevRoss/bert-slot-tokenizer) ![GitHub](https://img.shields.io/github/license/DevRoss/bert-slot-tokenizer)
+![Travis (.org)](https://img.shields.io/travis/DevRoss/bert-slot-tokenizer) ![GitHub](https://img.shields.io/github/license/devross/bert-slot-tokenizer)
 
 **bert_slot_tokenizer** 是一个将slot filling 任务中slot解析为其他格式的工具
 
@@ -34,7 +34,7 @@ output_text, iob_slot = sc.convert2iob(text, slot)
 print(output_text)
 # ['too', 'young', ',', 'too', 'simple', ',', 'some', '##times', 'na', '##ive', '!', '蛤', '蛤', '+', '1', '##s']
 print(iob_slot)
-# 	['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'B-name', 'I-name', 'B-time', 'I-time', 'I-time']
+# ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'B-name', 'I-name', 'B-time', 'I-time', 'I-time']
 ```
 
 ## 写在最后：
