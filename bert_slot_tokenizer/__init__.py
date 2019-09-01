@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Created by Ross on 2019/7/31
 import json
-
+import io
 from bert_slot_tokenizer.bert_tokenizer import tokenization
 
 
@@ -31,7 +31,7 @@ class SlotConverter:
 
     @staticmethod
     def parse_json(file):
-        with open(file, 'r', encoding='utf-8') as f:
+        with io.open(file, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
         texts = []

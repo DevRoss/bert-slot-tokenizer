@@ -44,7 +44,7 @@ class UnitTests(unittest.TestCase):
 
     def test_project(self):
 
-        sc = SlotConverter('test_data/example_vocab.txt', do_lower_case=True)
+        sc = SlotConverter('tests/test_data/example_vocab.txt', do_lower_case=True)
 
         if six.PY3:
             token1, iob_slot1 = sc.convert2iob(UnitTests.test_case1['text'], UnitTests.test_case1['slots'])

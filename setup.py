@@ -27,7 +27,7 @@ with io.open(os.path.join(CURDIR, "README.md"), "r", encoding="utf-8") as f:
 def get_version():
     main_file = os.path.join(CURDIR, "bert_slot_tokenizer", "main.py")
     _version_re = re.compile(r"__version__\s+=\s+(?P<version>.*)")
-    with open(main_file, "r", encoding="utf8") as f:
+    with io.open(main_file, "r", encoding="utf8") as f:
         match = _version_re.search(f.read())
         version = match.group("version") if match is not None else '"unknown"'
     return str(ast.literal_eval(version))
