@@ -21,7 +21,7 @@ from __future__ import print_function
 import collections
 import re
 import unicodedata
-
+import io
 import six
 
 
@@ -134,7 +134,7 @@ def load_vocab(vocab_file):
     index = 0
 
     # with tf.gfile.GFile(vocab_file, "r") as reader:  # modified here
-    with open(vocab_file, "r") as reader:
+    with io.open(vocab_file, "r", encoding='utf-8') as reader:
         while True:
             token = convert_to_unicode(reader.readline())
             if not token:
