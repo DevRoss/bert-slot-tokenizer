@@ -11,8 +11,9 @@
 
 import ast
 import io
-import re
 import os
+import re
+
 from setuptools import find_packages, setup
 
 DEPENDENCIES = []
@@ -37,10 +38,10 @@ setup(
     version=get_version(),
     author="DevRoss",
     author_email="devross1997@gmail.com",
-    description="A tool for converting slot",
+    description="A tool for converting raw text to slot",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="",
+    url="https://github.com/DevRoss/bert-slot-tokenizer",
     packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     include_package_data=True,
     keywords=['bert_slot_tokenizer', 'bert', 'slot filling'],
@@ -49,12 +50,13 @@ setup(
     zip_safe=False,
     install_requires=DEPENDENCIES,
     test_suite="tests.test_project",
-    python_requires=">=3",
+    python_requires=">=2.7",
     # license and classifier list:
     # https://pypi.org/pypi?%3Aaction=list_classifiers
     license="License :: OSI Approved :: Apache Software License",
     classifiers=[
         "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: Implementation :: PyPy"

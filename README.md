@@ -1,6 +1,6 @@
 # bert_slot_tokenizer
 
------------------
+Version 0.2
 
 ![Travis (.org)](https://img.shields.io/travis/DevRoss/bert-slot-tokenizer) ![GitHub](https://img.shields.io/github/license/devross/bert-slot-tokenizer)
 
@@ -9,7 +9,7 @@
 ## 环境：
 
 - Python 3
-- ~~Python 2~~ （后续支持）
+- Python 2
 
 ## 安装：
 
@@ -44,3 +44,5 @@ print(iob_slot)
 感谢开源
 
 欢迎PR和issue
+
+联系方式： devross1997@gmail.com
