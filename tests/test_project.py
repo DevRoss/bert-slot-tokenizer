@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+import sys
 import unittest
+
+import six
+
+sys.path.append(os.path.dirname(os.getcwd()))
 import bert_slot_tokenizer
+from bert_slot_tokenizer.bert_tokenizer import tokenization
 from bert_slot_tokenizer import SlotConverter
 
 
@@ -21,15 +28,43 @@ class UnitTests(unittest.TestCase):
                   'target_iob_slot': ['O', 'O', 'O', 'O', 'O', 'O', 'B-action', 'I-action', 'I-action', 'O']
                   }
 
+    def convert_to_unicode_list(self, l):
+        """
+        string to unicode when testing with python2
+        :param l:
+        :return:
+        """
+        ret = list()
+        for i in range(len(l)):
+            ret.append(tokenization.convert_to_unicode(l[i]))
+        return ret
+
     def test_import(self):
         self.assertIsNotNone(bert_slot_tokenizer)
 
     def test_project(self):
-        sc = SlotConverter('test_data/example_vocab.txt', do_lower_case=True)
-        token1, iob_slot1 = sc.convert2iob(UnitTests.test_case1['text'], UnitTests.test_case1['slots'])
-        token2, iob_slot2 = sc.convert2iob(UnitTests.test_case2['text'], UnitTests.test_case2['slots'])
 
-        self.assertTrue(token1 == UnitTests.test_case1['target_token'], "token1")
-        self.assertTrue(iob_slot1 == UnitTests.test_case1['target_iob_slot'], "iob_slot1")
-        self.assertTrue(token2 == UnitTests.test_case2['target_token'], "token2")
-        self.assertTrue(iob_slot2 == UnitTests.test_case2['target_iob_slot'], "iob_slot2")
+        sc = SlotConverter('test_data/example_vocab.txt', do_lower_case=True)
+
+        if six.PY3:
+            token1, iob_slot1 = sc.convert2iob(UnitTests.test_case1['text'], UnitTests.test_case1['slots'])
+            token2, iob_slot2 = sc.convert2iob(UnitTests.test_case2['text'], UnitTests.test_case2['slots'])
+
+            self.assertTrue(token1 == UnitTests.test_case1['target_token'], "token1")
+            self.assertTrue(iob_slot1 == UnitTests.test_case1['target_iob_slot'], "iob_slot1")
+            self.assertTrue(token2 == UnitTests.test_case2['target_token'], "token2")
+            self.assertTrue(iob_slot2 == UnitTests.test_case2['target_iob_slot'], "iob_slot2")
+        elif six.PY2:
+            token1, iob_slot1 = sc.convert2iob(UnitTests.test_case1['text'], UnitTests.test_case1['slots'])
+            token2, iob_slot2 = sc.convert2iob(UnitTests.test_case2['text'], UnitTests.test_case2['slots'])
+
+            self.assertTrue(token1 == self.convert_to_unicode_list(UnitTests.test_case1['target_token']), "token1")
+            self.assertTrue(iob_slot1 == self.convert_to_unicode_list(UnitTests.test_case1['target_iob_slot']),
+                            "iob_slot1")
+            self.assertTrue(token2 == self.convert_to_unicode_list(UnitTests.test_case2['target_token']), "token2")
+            self.assertTrue(iob_slot2 == self.convert_to_unicode_list(UnitTests.test_case2['target_iob_slot']),
+                            "iob_slot2")
+
+
+if __name__ == '__main__':
+    unittest.main()

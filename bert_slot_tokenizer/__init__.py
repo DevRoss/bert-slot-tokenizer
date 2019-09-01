@@ -81,7 +81,7 @@ class SlotConverter:
         return nex
 
     @classmethod
-    def tokenize(cls, begin_index: int, end_index: int, slot_key: str, ret_slot: list):
+    def tokenize(cls, begin_index, end_index, slot_key, ret_slot):
         """
         Convert to IOB format slot when given slot‘s begin/end slot index.
         We perform in place, which means re_slot will change after calling this function.
@@ -92,15 +92,16 @@ class SlotConverter:
         :return:
         """
         # usage: [begin_index, end_index]
+        unicode_O = tokenization.convert_to_unicode('O')
         for i in range(begin_index, end_index):
-            if ret_slot[i] != 'O':
+            if ret_slot[i] != unicode_O:
                 break
             if i == begin_index:
-                ret_slot[i] = 'B-' + slot_key
+                ret_slot[i] = tokenization.convert_to_unicode('B-' + slot_key)
             else:
-                ret_slot[i] = 'I-' + slot_key
+                ret_slot[i] = tokenization.convert_to_unicode('I-' + slot_key)
 
-    def convert2iob(self, text: str, slot: dict) -> (str, list):
+    def convert2iob(self, text, slot):
         """
         convert dict slot to IOB format slot
         :param text: text with type str
@@ -108,7 +109,8 @@ class SlotConverter:
         :return: a tuple with (output_slot, output_iob_slot)
         """
         text_tokens = self.bert_tokenizer.tokenize(text)
-        iob_slot = list('O' * len(text_tokens))
+        iob_slot = list(tokenization.convert_to_unicode('O') * len(text_tokens))
+
         for k, v in slot.items():
             slot_tokens = self.bert_tokenizer.tokenize(v)
             begin_index = SlotConverter.kmp(text_tokens, slot_tokens)
