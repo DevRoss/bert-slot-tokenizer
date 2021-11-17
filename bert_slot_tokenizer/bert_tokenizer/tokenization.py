@@ -409,3 +409,125 @@ def _is_punctuation(char):
     if cat.startswith("P"):
         return True
     return False
+
+
+class SeqWordpieceTokenizer(WordpieceTokenizer):
+
+    def __init__(self, vocab, unk_token="[UNK]", max_input_chars_per_word=100):
+        super().__init__(vocab, unk_token, max_input_chars_per_word)
+
+    def tokenize(self, orig_text, text):
+        """Tokenizes a piece of text into its word pieces.
+
+        This uses a greedy longest-match-first algorithm to perform tokenization
+        using the given vocabulary.
+
+        For example:
+          input = "unaffable"
+          output = ["un", "##aff", "##able"]
+
+        Args:
+          text: A single token or whitespace separated tokens. This should have
+            already been passed through `BasicTokenizer.
+
+        Returns:
+          A list of wordpiece tokens.
+        """
+
+        text = convert_to_unicode(text)
+        orig_text = convert_to_unicode(orig_text)
+
+        output_tokens = []
+        orig_output_tokens = []
+        for orig_token, token in zip(whitespace_tokenize(orig_text), whitespace_tokenize(text)):
+            chars = list(token)
+            orig_chars = list(orig_token)
+            if len(chars) > self.max_input_chars_per_word:
+                output_tokens.append(self.unk_token)
+                orig_output_tokens.append(orig_token)
+                continue
+
+            is_bad = False
+            start = 0
+            sub_tokens = []
+            orig_sub_tokens = []
+            while start < len(chars):
+                end = len(chars)
+                cur_substr = None
+                orig_cur_substr = None
+                while start < end:
+                    substr = "".join(chars[start:end])
+                    orig_substr = "".join(orig_chars[start:end])
+                    if start > 0:
+                        substr = "##" + substr
+                    if substr in self.vocab:
+                        cur_substr = substr
+                        orig_cur_substr = orig_substr
+                        break
+                    end -= 1
+                if cur_substr is None:
+                    is_bad = True
+                    break
+                sub_tokens.append(cur_substr)
+                orig_sub_tokens.append(orig_cur_substr)
+                start = end
+
+            if is_bad:
+                output_tokens.append(self.unk_token)
+                orig_output_tokens.append(orig_token)
+            else:
+                output_tokens.extend(sub_tokens)
+                orig_output_tokens.extend(orig_sub_tokens)
+        return orig_output_tokens, output_tokens
+
+
+class SeqBasicTokenizer(BasicTokenizer):
+    """Runs basic tokenization (punctuation splitting, lower casing, etc.)."""
+
+    def __init__(self, do_lower_case=True):
+        super().__init__(do_lower_case)
+
+    def tokenize(self, text):
+        """Tokenizes a piece of text."""
+        text = convert_to_unicode(text)
+        text = self._clean_text(text)
+        # This was added on November 1st, 2018 for the multilingual and Chinese
+        # models. This is also applied to the English models now, but it doesn't
+        # matter since the English models were not trained on any Chinese data
+        # and generally don't have any Chinese data in them (there are Chinese
+        # characters in the vocabulary because Wikipedia does have some Chinese
+        # words in the English Wikipedia.).
+        text = self._tokenize_chinese_chars(text)
+        orig_tokens = whitespace_tokenize(text)
+        split_tokens = []
+        orig_split_tokens = []
+        for token in orig_tokens:
+            orig_token = token
+            if self.do_lower_case:
+                token = token.lower()
+                token = self._run_strip_accents(token)
+                orig_token = self._run_strip_accents(orig_token)
+            split_tokens.extend(self._run_split_on_punc(token))
+            orig_split_tokens.extend(self._run_split_on_punc(orig_token))
+
+        output_tokens = whitespace_tokenize(" ".join(split_tokens))
+        orig_output_tokens = whitespace_tokenize(" ".join(orig_split_tokens))
+        return orig_output_tokens, output_tokens
+
+
+class SeqFullTokenizer(FullTokenizer):
+
+    def __init__(self, vocab_file, do_lower_case=True):
+        super().__init__(vocab_file, do_lower_case)
+        self.vocab = load_vocab(vocab_file)
+        self.basic_tokenizer = SeqBasicTokenizer(do_lower_case=do_lower_case)
+        self.wordpiece_tokenizer = SeqWordpieceTokenizer(vocab=self.vocab)
+
+    def tokenize(self, text):
+        split_tokens = []
+        orig_split_tokens = []
+        for orig_token, token in zip(*self.basic_tokenizer.tokenize(text)):
+            for orig_sub_token, sub_token in zip(*self.wordpiece_tokenizer.tokenize(orig_token, token)):
+                split_tokens.append(sub_token)
+                orig_split_tokens.append(orig_sub_token)
+        return orig_split_tokens, split_tokens

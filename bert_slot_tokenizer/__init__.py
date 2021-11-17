@@ -4,6 +4,7 @@
 import json
 import io
 from bert_slot_tokenizer.bert_tokenizer import tokenization
+import logging
 
 
 class SlotConverter:
@@ -45,22 +46,27 @@ class SlotConverter:
     def kmp(main_str, pattern):
         """
         Kmp algorithm to get the begin index of slot in text if matching
-
+        return: List[int] a list of begin index
         """
         nex = SlotConverter.get_next(pattern)
         i = 0  # the pointer of main_str
         j = 0  # the pointer of pattern
-        while i < len(main_str) and j < len(pattern):
-            if j == -1 or main_str[i] == pattern[j]:
-                i += 1
-                j += 1
-            else:
-                j = nex[j]
+        results = []
+        while i < len(main_str):
+            while i < len(main_str) and j < len(pattern):
+                if j == -1 or main_str[i] == pattern[j]:
+                    i += 1
+                    j += 1
+                else:
+                    j = nex[j]
 
-        if j == len(pattern):  # matched
-            return i - j
-        else:
-            return -1
+            if j == len(pattern):  # matched
+                results.append(i - j)
+                i += 1
+                j = 0
+            else:
+                break
+        return results
 
     @staticmethod
     def get_next(pattern):
@@ -81,13 +87,13 @@ class SlotConverter:
         return nex
 
     @classmethod
-    def tokenize(cls, begin_index, end_index, slot_key, ret_slot):
+    def fill_iob(cls, begin_index, end_index, slot_type, ret_slot):
         """
         Convert to IOB format slot when given slot‘s begin/end slot index.
         We perform in place, which means re_slot will change after calling this function.
         :param begin_index: slot begin index, where the slot begins.
-        :param end_index: slot begin index, where the slot ends.
-        :param slot_key: the label of slot, such as 'AppName'
+        :param end_index: slot begin index, where the slot ends. (not include)
+        :param slot_type: the label of slot, such as 'AppName'
         :param ret_slot:
         :return:
         """
@@ -97,26 +103,108 @@ class SlotConverter:
             if ret_slot[i] != unicode_O:
                 break
             if i == begin_index:
-                ret_slot[i] = tokenization.convert_to_unicode('B-' + slot_key)
+                ret_slot[i] = tokenization.convert_to_unicode('B-' + slot_type)
             else:
-                ret_slot[i] = tokenization.convert_to_unicode('I-' + slot_key)
+                ret_slot[i] = tokenization.convert_to_unicode('I-' + slot_type)
+    @classmethod
+    def fill_iobs(cls, begin_index, end_index, slot_type, ret_slot):
+        """
+        Convert to IOB format slot when given slot‘s begin/end slot index.
+        We perform in place, which means re_slot will change after calling this function.
+        :param begin_index: slot begin index, where the slot begins.
+        :param end_index: slot begin index, where the slot ends. (not include)
+        :param slot_type: the label of slot, such as 'AppName'
+        :param ret_slot:
+        :return:
+        """
+        # usage: [begin_index, end_index]
+        unicode_O = tokenization.convert_to_unicode('O')
+        for i in range(begin_index, end_index):
+            if ret_slot[i] != unicode_O:
+                break
+            if end_index - begin_index == 1:
+                ret_slot[i] = tokenization.convert_to_unicode('S-' + slot_type)
+                continue
+            if i == begin_index:
+                ret_slot[i] = tokenization.convert_to_unicode('B-' + slot_type)
+            else:
+                ret_slot[i] = tokenization.convert_to_unicode('I-' + slot_type)
 
-    def convert2iob(self, text, slot):
+    @classmethod
+    def fill_bmes(cls, begin_index, end_index, slot_type, ret_slot):
+        """
+        Convert to IOB format slot when given slot‘s begin/end slot index.
+        We perform in place, which means re_slot will change after calling this function.
+        :param begin_index: slot begin index, where the slot begins.
+        :param end_index: slot begin index, where the slot ends. (not include)
+        :param slot_type: the label of slot, such as 'AppName'
+        :param ret_slot:
+        :return:
+        """
+        # usage: [begin_index, end_index]
+        unicode_O = tokenization.convert_to_unicode('O')
+        for i in range(begin_index, end_index):
+            if ret_slot[i] != unicode_O:
+                break
+            if end_index - begin_index == 1:
+                ret_slot[i] = tokenization.convert_to_unicode('S-' + slot_type)
+                continue
+            if i == begin_index:
+                ret_slot[i] = tokenization.convert_to_unicode('B-' + slot_type)
+            elif i == end_index - 1:
+                ret_slot[i] = tokenization.convert_to_unicode('E-' + slot_type)
+            else:
+                ret_slot[i] = tokenization.convert_to_unicode('M-' + slot_type)
+
+    @classmethod
+    def tag_span(cls, begin_index, end_index, slot_type, ret_slot):
+        """
+        Convert to IOB format slot when given slot‘s begin/end slot index.
+        We perform in place, which means re_slot will change after calling this function.
+        :param begin_index: slot begin index, where the slot begins.
+        :param end_index: slot begin index, where the slot ends. (not include)
+        :param slot_type: the label of slot, such as 'AppName'
+        :param ret_slot: [[begin_index, end_index - 1, slot_type]]
+        :return:
+        """
+        # usage: [begin_index, end_index]
+        ret_slot.append([begin_index, end_index - 1, slot_type])
+
+    def convert(self, text, slot, fmt='IOB'):
         """
         convert dict slot to IOB format slot
         :param text: text with type str
         :param slot: slot with type dict
         :return: a tuple with (output_slot, output_iob_slot)
         """
-        text_tokens = self.bert_tokenizer.tokenize(text)
-        iob_slot = list(tokenization.convert_to_unicode('O') * len(text_tokens))
+        if fmt == 'IOB':
+            convert_func = SlotConverter.fill_iob
+        elif fmt == 'IOBS':
+            convert_func = SlotConverter.fill_iobs
+        elif fmt == 'BMES':
+            convert_func = SlotConverter.fill_bmes
+        elif fmt == 'SPAN':
+            convert_func = SlotConverter.tag_span
+        else:
+            raise NotImplementedError('Not support format {fmt}, please try [IOB, IOBS, BMES, SPAN]')
 
-        for k, v in slot.items():
-            slot_tokens = self.bert_tokenizer.tokenize(v)
-            begin_index = SlotConverter.kmp(text_tokens, slot_tokens)
-            SlotConverter.tokenize(begin_index, begin_index + len(slot_tokens), k, iob_slot)
-            assert len(iob_slot) == len(text_tokens)
-        return text_tokens, iob_slot
+        text_tokens = self.bert_tokenizer.tokenize(text)
+        if fmt in ['IOB', 'IOBS', 'BMES']: 
+            tag_result = list(tokenization.convert_to_unicode('O') * len(text_tokens))
+        else:
+            tag_result = [] # span
+
+        for entity_name, entity_type in slot.items():
+            slot_tokens = self.bert_tokenizer.tokenize(entity_name)
+            begin_index_list = SlotConverter.kmp(text_tokens, slot_tokens)
+            for begin_index in begin_index_list:
+                convert_func(begin_index, begin_index + len(slot_tokens), entity_type, tag_result)
+        # check the length for IOB, IOBS, BMES format
+        if fmt in ['IOB', 'IOBS', 'BMES']:
+            assert len(tag_result) == len(text_tokens)
+        elif fmt == 'SPAN':
+            tag_result.sort()
+        return text_tokens, tag_result
 
 
 if __name__ == '__main__':
